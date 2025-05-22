@@ -1,0 +1,15 @@
+Papersarxiv:2505.14674Reward Reasoning ModelPublished on May 20·Submitted byunilmon May 21Upvote17+9Authors:Jiaxin Guo,Zewen Chi,Li Dong,Qingxiu Dong,Xun Wu,Shaohan Huang,Furu WeiReward modelsplay a critical role in guidinglarge language modelstoward
+outputs that align with human expectations. However, an open challenge remains
+in effectively utilizingtest-time computeto enhance reward model performance.
+In this work, we introduce Reward Reasoning Models (RRMs), which are
+specifically designed to execute a deliberate reasoning process before
+generating final rewards. Throughchain-of-thought reasoning, RRMs leverage
+additionaltest-time computefor complex queries where appropriate rewards are
+not immediately apparent. To develop RRMs, we implement a reinforcement
+learning framework that fosters self-evolved reward reasoning capabilities
+without requiring explicit reasoning traces as training data. Experimental
+results demonstrate that RRMs achieve superior performance on reward modeling
+benchmarks across diverse domains. Notably, we show that RRMs can adaptively
+exploittest-time computeto further improvereward accuracy. The pretrained
+reward reasoning models are available at
+https://huggingface.co/Reward-Reasoning.View arXiv pageView PDFAdd to collectionCommunityunilmPaper authorPaper submitterabout 21 hours agoReward models play a critical role in guiding large language models toward outputs that align with human expectations. However, an open challenge remains in effectively utilizing test-time compute to enhance reward model performance. In this work, we introduce Reward Reasoning Models (RRMs), which are specifically designed to execute a deliberate reasoning process before generating final rewards. Through chain-of-thought reasoning, RRMs leverage additional test-time compute for complex queries where appropriate rewards are not immediately apparent. To develop RRMs, we implement a reinforcement learning framework that fosters self-evolved reward reasoning capabilities without requiring explicit reasoning traces as training data. Experimental results demonstrate that RRMs achieve superior performance on reward modeling benchmarks across diverse domains. Notably, we show that RRMs can adaptively exploit test-time compute to further improve reward accuracy.See translationReplyEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment

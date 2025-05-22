@@ -1,0 +1,19 @@
+Papersarxiv:2505.14460VisualQuality-R1: Reasoning-Induced Image Quality Assessment via
+  Reinforcement Learning to RankPublished on May 20·Submitted byTianheWuon May 21Upvote26+18Authors:Tianhe Wu,Jian Zou,Jie Liang,Lei Zhang,Kede MaDeepSeek-R1 has demonstrated remarkable effectiveness in incentivizing
+reasoning and generalization capabilities of large language models (LLMs)
+throughreinforcement learning. Nevertheless, the potential of
+reasoning-induced computational modeling has not been thoroughly explored in
+the context of image quality assessment (IQA), a task critically dependent on
+visual reasoning. In this paper, we introduce VisualQuality-R1, areasoning-induced no-reference IQA (NR-IQA)model, and we train it withreinforcement learningto rank, a learning algorithm tailored to the
+intrinsically relative nature of visual quality. Specifically, for a pair of
+images, we employgroup relative policy optimizationto generate multiple
+quality scores for each image. These estimates are then used to compute
+comparative probabilities of one image having higher quality than the other
+under theThurstone model. Rewards for each quality estimate are defined usingcontinuous fidelity measuresrather than discretized binary labels. Extensive
+experiments show that the proposed VisualQuality-R1 consistently outperforms
+discriminative deep learning-based NR-IQA models as well as a recent
+reasoning-induced quality regression method. Moreover, VisualQuality-R1 is
+capable of generating contextually rich, human-aligned quality descriptions,
+and supports multi-dataset training without requiring perceptual scale
+realignment. These features make VisualQuality-R1 especially well-suited for
+reliably measuring progress in a wide range of image processing tasks likesuper-resolutionandimage generation.View arXiv pageView PDFGitHub repositoryAdd to collectionCommunityTianheWuPaper authorPaper submitterabout 20 hours agoThis comment has been hidden (marked as Abuse)TianheWuPaper authorPaper submitterabout 16 hours ago•edited about 16 hours agoThe first NR-IQA model enhanced by RL2R, capable of both quality description and rating through reasoning. Don't hesitate to ask if anything is unclear.See translationReplylibrarian-botless than a minute agoThis is an automated message from theLibrarian Bot. I found the following papers similar to this paper.The following papers were recommended by the Semantic Scholar APIQ-Insight: Understanding Image Quality via Visual Reinforcement Learning(2025)Test-Time Reasoning Through Visual Human Preferences with VLMs and Soft Rewards(2025)EchoInk-R1: Exploring Audio-Visual Reasoning in Multimodal LLMs via Reinforcement Learning(2025)GMAI-VL-R1: Harnessing Reinforcement Learning for Multimodal Medical Reasoning(2025)VideoChat-R1: Enhancing Spatio-Temporal Perception via Reinforcement Fine-Tuning(2025)VLM-R1: A Stable and Generalizable R1-style Large Vision-Language Model(2025)GPG: A Simple and Strong Reinforcement Learning Baseline for Model Reasoning(2025)Please give a thumbs up to this comment if you found it helpful!If you want recommendations for any Paper on Hugging Face checkoutthisSpaceYou can directly ask Librarian Bot for paper recommendations by tagging it in a comment:@librarian-botrecommendSee translationReplyEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment

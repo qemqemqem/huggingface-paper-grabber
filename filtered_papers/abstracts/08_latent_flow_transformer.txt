@@ -1,0 +1,15 @@
+Papersarxiv:2505.14513Latent Flow TransformerPublished on May 20·Submitted byFengTingon May 21Upvote19+11Authors:Yen-Chen Wu,Feng-Ting Liao,Meng-Hsi Chen,Pei-Chen Ho,Farhang Nabiei,Da-shan ShiuTransformers, the standard implementation for large language models (LLMs),
+typically consist of tens to hundreds of discrete layers. While more layers can
+lead to better performance, this approach has been challenged as far from
+efficient, especially given the superiority of continuous layers demonstrated
+by diffusion and flow-based models for image generation. We propose the Latent
+Flow Transformer (LFT), which replaces a block of layers with a single learned
+transport operator trained viaflow matching, offering significant compression
+while maintaining compatibility with the original architecture. Additionally,
+we address the limitations of existing flow-based methods in preserving
+coupling by introducing theFlow Walking(FW) algorithm. On the Pythia-410M
+model,LFTtrained withflow matchingcompresses 6 of 24 layers and outperforms
+directly skipping 2 layers (KL DivergenceofLM logitsat 0.407 vs. 0.529),
+demonstrating the feasibility of this design. When trained with FW,LFTfurther
+distills 12 layers into one while reducing the KL to 0.736 surpassing that from
+skipping 3 layers (0.932), significantly narrowing the gap betweenautoregressiveandflow-based generation paradigms.View arXiv pageView PDFGitHub repositoryAdd to collectionCommunityFengTingPaper authorPaper submitterabout 24 hours ago•edited about 23 hours agoWe aim to bridge the autoregressive and flow-based generation paradigms. We propose the Latent Flow Transformer (LFT), which replaces a block of layers with a single learned transport operator trained via flow matching, offering significant compression while maintaining compatibility with the original architecture.See translationReplyEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment

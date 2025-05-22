@@ -1,0 +1,15 @@
+Papersarxiv:2505.14489Reasoning Models Better Express Their ConfidencePublished on May 20·Submitted byDKYoonon May 21Upvote14+6Authors:Dongkeun Yoon,Seungone Kim,Sohee Yang,Sunkyoung Kim,Soyeon Kim,Yongil Kim,Eunbi Choi,Yireun Kim,Minjoon SeoDespite their strengths,large language models(LLMs) often fail to
+communicate their confidence accurately, making it difficult to assess when
+they might be wrong and limiting their reliability. In this work, we
+demonstrate that reasoning models-LLMsthat engage in extendedchain-of-thought(CoT) reasoning-exhibit superior performance not only in problem-solving but
+also in accurately expressing their confidence. Specifically, we benchmark six
+reasoning models across sixdatasetsand find that they achieve strictly betterconfidence calibrationthan their non-reasoning counterparts in 33 out of the
+36 settings. Our detailed analysis reveals that these gains in calibration stem
+from the slow thinking behaviors of reasoning models-such as exploringalternative approachesandbacktracking-which enable them to adjust their
+confidence dynamically throughout their CoT, making it progressively more
+accurate. In particular, we find that reasoning models become increasingly
+better calibrated as their CoT unfolds, a trend not observed in non-reasoning
+models. Moreover, removing slow thinking behaviors from the CoT leads to a
+significant drop in calibration. Lastly, we show that these gains are not
+exclusive to reasoning models-non-reasoning models also benefit when guided to
+perform slow thinking viain-context learning.View arXiv pageView PDFGitHub repositoryAdd to collectionCommunityDKYoonPaper authorPaper submitterabout 21 hours ago•edited about 13 hours ago🙁 LLMs are overconfident even when they are dead wrong.🧐 What about reasoning models? Can they actually tell us “My answer is only 60% likely to be correct”?❗Our paper suggests that they can! Through extensive analysis, we investigate what enables this emergent ability.See translationReplyEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment

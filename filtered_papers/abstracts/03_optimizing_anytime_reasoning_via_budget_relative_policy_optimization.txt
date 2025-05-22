@@ -1,0 +1,17 @@
+Papersarxiv:2505.13438Optimizing Anytime Reasoning via Budget Relative Policy OptimizationPublished on May 19·Submitted byQPHutuon May 21#3 Paper of the dayUpvote29+21Authors:Penghui Qi,Zichen Liu,Tianyu Pang,Chao Du,Wee Sun Lee,Min LinScaling test-time compute is crucial for enhancing the reasoning capabilities
+oflarge language models (LLMs). Existing approaches typically employreinforcement learning (RL)to maximize a verifiable reward obtained at the end
+of reasoning traces. However, such methods optimize only the final performance
+under a large and fixedtoken budget, which hinders efficiency in both training
+and deployment. In this work, we present a novel framework, AnytimeReasoner, to
+optimizeanytime reasoning performance, which aims to improve token efficiency
+and the flexibility of reasoning under varyingtoken budgetconstraints. To
+achieve this, we truncate the complete thinking process to fit within sampledtoken budgets from a prior distribution, compelling the model to summarize the
+optimal answer for each truncated thinking for verification. This introducesverifiable dense rewardsinto the reasoning process, facilitating more
+effective credit assignment in RL optimization. We then optimize the thinking
+and summary policies in a decoupled manner to maximize the cumulative reward.
+Additionally, we introduce a novel variance reduction technique, Budget
+Relative Policy Optimization (BRPO), to enhance the robustness and efficiency
+of the learning process when reinforcing the thinking policy. Empirical results
+inmathematical reasoning tasksdemonstrate that our method consistently
+outperformsGRPOacross all thinking budgets under various prior distributions,
+enhancing both training and token efficiency.View arXiv pageView PDFGitHub repositoryAdd to collectionCommunityQPHutuPaper authorPaper submitterabout 17 hours agoBetter test-time scaling compared to GRPO !See translationReplyEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment
