@@ -6,8 +6,10 @@ A Python utility to download research papers from HuggingFace's papers page base
 
 - Scrapes papers from https://huggingface.co/papers
 - Downloads PDFs and their abstracts
-- Filters papers based on abstract content
-- Supports custom filter functions
+- Multiple filtering options:
+  - Simple keyword-based filtering
+  - Rule-based filtering with custom functions
+  - LLM-based filtering using Claude 3.7 via LiteLLM
 - Command-line interface for flexible usage
 
 ## Requirements
@@ -30,6 +32,12 @@ A Python utility to download research papers from HuggingFace's papers page base
    pip install -r requirements.txt
    ```
 
+3. For LLM-based filtering, set up API access:
+   ```bash
+   # For Anthropic API (Claude)
+   export ANTHROPIC_API_KEY=your_api_key_here
+   ```
+
 ## Usage
 
 ### Basic Usage
@@ -47,9 +55,38 @@ By default, it will:
 - Save PDFs to `filtered_papers/pdfs/`
 - Save abstracts to `filtered_papers/abstracts/`
 
-### Using the Command-Line Interface
+### Using LLM-Based Filtering
 
-For more flexibility, use the CLI tool:
+For more sophisticated filtering using an LLM:
+
+```bash
+python llm_filtered_cli.py [options]
+```
+
+Options:
+- `-n, --max-downloads N`: Download up to N papers (default: 5)
+- `-c, --criteria-file FILE`: Path to criteria prompt file (default: what_makes_a_good_paper.txt)
+- `-o, --output-dir DIR`: Save papers to DIR (default: llm_filtered_papers)
+- `-m, --model MODEL`: LLM model to use (default: claude-3-7-sonnet)
+- `-s, --min-score N`: Minimum score threshold (1-10) required to download
+- `-u, --url URL`: Use a different URL (default: https://huggingface.co/papers)
+
+Examples:
+
+```bash
+# Basic usage with default criteria
+python llm_filtered_cli.py
+
+# Use custom criteria file with minimum score threshold
+python llm_filtered_cli.py --criteria-file my_criteria.txt --min-score 7
+
+# Download more papers
+python llm_filtered_cli.py --max-downloads 10 --output-dir more_papers
+```
+
+### Using Custom Rule-Based Filtering
+
+For rule-based filtering:
 
 ```bash
 python filtered_cli.py [options]
@@ -61,56 +98,35 @@ Options:
 - `-f, --filter-module PATH`: Use a custom filter module
 - `-u, --url URL`: Use a different URL (default: https://huggingface.co/papers)
 
-Examples:
+## LLM-Based Filtering
 
-```bash
-# Download up to 20 papers
-python filtered_cli.py --max-downloads 20
+### How It Works
 
-# Use a custom filter module
-python filtered_cli.py --filter-module sample_filters.py
+The LLM-based filter:
+1. Reads your criteria from a prompt file
+2. For each paper, sends the abstract and title to Claude 3.7 along with your criteria
+3. The LLM evaluates the paper and returns:
+   - A boolean decision (should download or not)
+   - A relevance score (1-10)
+   - Reasoning for the evaluation
+4. Papers that meet the criteria are downloaded
+5. A summary of all evaluations is saved
 
-# Combine options
-python filtered_cli.py --max-downloads 15 --filter-module my_filter.py --output-dir ai_papers
+### Criteria File Format
+
+The criteria file should contain the standards by which papers should be evaluated. For example:
+
+```
+Good papers should focus on machine learning applications in healthcare.
+They should present novel approaches, be well-structured, and include
+experimental results with real-world data.
 ```
 
-## Custom Filtering
+### Evaluation Summary
 
-The key to this tool is the ability to create custom filters. A filter is a function that analyzes a paper's abstract and decides whether to download it.
+After running, an `evaluation_summary.txt` file is created in the output directory with detailed information about each paper evaluation, including scores and reasoning.
 
-### How Filtering Works
-
-1. Create a Python module with a `should_download` function
-2. The function should accept an abstract (and optionally a title)
-3. Return `True` to download the paper, or `False` to skip it
-
-### Example Filter Module
-
-Here's a simple filter module:
-
-```python
-def should_download(abstract, title=""):
-    """
-    Determine if a paper should be downloaded.
-    
-    Args:
-        abstract (str): The abstract text of the paper
-        title (str, optional): The title of the paper
-        
-    Returns:
-        bool: True if the paper should be downloaded
-    """
-    # Convert to lowercase for case-insensitive matching
-    text = (abstract + " " + title).lower()
-    
-    # Only download papers about transformers or LLMs
-    target_topics = ["transformer", "llm", "large language model"]
-    
-    # Return True if any topic is found
-    return any(topic in text for topic in target_topics)
-```
-
-### Sample Filters
+## Custom Rule-Based Filtering
 
 The repository includes `sample_filters.py` with several example filters:
 
