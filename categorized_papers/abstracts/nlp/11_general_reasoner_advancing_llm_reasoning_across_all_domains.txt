@@ -1,0 +1,21 @@
+Papersarxiv:2505.14652General-Reasoner: Advancing LLM Reasoning Across All DomainsPublished on May 20·Submitted byMrLighton May 21Upvote13+5Authors:Xueguang Ma,Qian Liu,Dongfu Jiang,Ge Zhang,Zejun Ma,Wenhu ChenReinforcement learning(RL) has recently demonstrated strong potential in
+enhancing the reasoning capabilities oflarge language models(LLMs).
+Particularly, the "Zero"reinforcement learningintroduced byDeepseek-R1-Zero,
+enables direct RL training of base LLMs without relying on an intermediate
+supervised fine-tuning stage. Despite these advancements, current works for LLM
+reasoning mainly focus on mathematical and coding domains, largely due to data
+abundance and the ease of answer verification. This limits the applicability
+and generalization of such models to broader domains, where questions often
+have diverse answer representations, and data is more scarce. In this paper, we
+propose General-Reasoner, a novel training paradigm designed to enhance LLM
+reasoning capabilities across diverse domains. Our key contributions include:
+(1) constructing a large-scale, high-quality dataset of questions with
+verifiable answers curated by web crawling, covering a wide range of
+disciplines; and (2) developing agenerative model-based answer verifier, which
+replaces traditional rule-based verification with the capability ofchain-of-thoughtandcontext-awareness. We train a series of models and
+evaluate them on a wide range of datasets covering wide domains like physics,
+chemistry, finance, electronics etc. Our comprehensive evaluation across these
+12 benchmarks (e.g. MMLU-Pro, GPQA, SuperGPQA, TheoremQA, BBEH and MATH AMC)
+demonstrates that General-Reasoner outperforms existing baseline methods,
+achieving robust and generalizable reasoning performance while maintaining
+superior effectiveness in mathematical reasoning tasks.View arXiv pageView PDFProject pageGitHub repositoryAdd to collectionCommunityMrLightPaper authorPaper submitterabout 22 hours agoGeneral-Reasoner introduces a new training paradigm that leverages diverse web-crawled verifiable reasoning data and a compact generative model-based verifier to enable large language models to achieve robust, generalizable reasoning across a wide range of domains beyond mathematics.https://tiger-ai-lab.github.io/General-Reasoner/See translationReplyMichaelBarryUK23 minutes agoIf you remove the "14b-zoo" variant from chart 1 (it serves no purpose), and add the "qwen-3 base" and "qwen-3 instruct" then the chart would be more clear and less likely to mislead the reader that your method improves performance dramatically, when in fact the perceived dramatic increase is due to qwen-3 being a better model than qwen-2.5, for GPQA the chart emphasises a 12.6 point increase because you are comparing "qwen 2.5 instruct" to your "qwen-3 general" model. Whereas the actual increase, from qwen-3 instruct is only 1.3 pointsAll the data is in the tables, so I'm not saying you're deliberately misleading anyone, but the choice of elements in first chart is both confusing and (accidentally) misleading.See translation1 reply·wenhuPaper author7 minutes agoThanks for the reminder!We are starting from Qwen3-base models instead of Qwen3-instruct. So 1.3 points over Qwen3-instruct is indeed good because we don't use any confidential data used by the Qwen3 team. We release all of our data and training checkpoints.But you are right. We should put the qwen3-base and qwen3-instruct results in the chart 1 to show the fair comparison. We will update this chart soon.See translationEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment

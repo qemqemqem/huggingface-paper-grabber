@@ -1,0 +1,16 @@
+Papersarxiv:2505.13866Reasoning Path Compression: Compressing Generation Trajectories for
+  Efficient LLM ReasoningPublished on May 20·Submitted byjiwonsongon May 21Upvote13+5Authors:Jiwon Song,Dongwon Jo,Yulhwa Kim,Jae-Joon KimRecentreasoning-focused language modelsachieve high accuracy by generating
+lengthyintermediate reasoning pathsbefore producing final answers. While this
+approach is effective in solving problems that require logical thinking, long
+reasoning paths significantly increasememory usageand throughput of token
+generation, limiting the practical deployment of such models. We propose
+Reasoning Path Compression (RPC), a training-free method that accelerates
+inference by leveraging thesemantic sparsityof reasoning paths. RPC
+periodically compresses theKV cacheby retainingKV cachethat receive high
+importance score, which are computed using aselector windowcomposed of
+recently generated queries. Experiments show that RPC improves generation
+throughput ofQwQ-32Bby up to 1.60times compared to the inference with fullKV cache, with an accuracy drop of 1.2% on theAIME 2024 benchmark. Our
+findings demonstrate thatsemantic sparsityin reasoning traces can be
+effectively exploited for compression, offering a practical path toward
+efficient deployment of reasoning LLMs. Our code is available at
+https://github.com/jiwonsong-dev/ReasoningPathCompression.View arXiv pageView PDFGitHub repositoryAdd to collectionCommunityjiwonsongPaper authorPaper submitterabout 24 hours agoReasoning Path Compression (RPC) is a training-free method for accelerating inference of reasoning language models by leveraging the semantic sparsity of generated reasoning paths. It improves throughput and reduces memory usage with minimal accuracy drop.See translationReplyEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment

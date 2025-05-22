@@ -1,0 +1,17 @@
+Papersarxiv:2505.14677Visionary-R1: Mitigating Shortcuts in Visual Reasoning with
+  Reinforcement LearningPublished on May 20·Submitted bykaiyangzhouon May 21Upvote12+4Authors:Jiaer Xia,Yuhang Zang,Peng Gao,Yixuan Li,Kaiyang ZhouLearning general-purpose reasoning capabilities has long been a challenging
+problem in AI. Recent research in large language models (LLMs), such as
+DeepSeek-R1, has shown thatreinforcement learningtechniques like GRPO can
+enable pre-trained LLMs to develop reasoning capabilities using simple
+question-answer pairs. In this paper, we aim to trainvisual language models(VLMs) to perform reasoning on image data throughreinforcement learningandvisual question-answer pairs, without any explicitchain-of-thought(CoT)
+supervision. Our findings indicate that simply applyingreinforcement learningto a VLM -- by prompting the model to produce a reasoning chain before
+providing an answer -- can lead the model to develop shortcuts from easy
+questions, thereby reducing its ability to generalize across unseen data
+distributions. We argue that the key to mitigating shortcut learning is to
+encourage the model to interpret images prior to reasoning. Therefore, we train
+the model to adhere to acaption-reason-answeroutput format: initially
+generating a detailed caption for an image, followed by constructing an
+extensive reasoning chain. When trained on 273K CoT-free visual question-answer
+pairs and using onlyreinforcement learning, our model, named Visionary-R1,
+outperforms strong multimodal models, such as GPT-4o, Claude3.5-Sonnet, and
+Gemini-1.5-Pro, on multiplevisual reasoning benchmarks.View arXiv pageView PDFGitHub repositoryAdd to collectionCommunitykaiyangzhouPaper authorPaper submitterabout 19 hours agohttps://github.com/maifoundations/Visionary-R1See translationReplyEditPreviewUpload images, audio, and videos by dragging in the text input, pasting, orclicking here.Tap or paste here to upload imagesComment·Sign uporlog into comment
