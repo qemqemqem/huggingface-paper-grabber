@@ -1,14 +1,13 @@
 # HuggingFace Paper Grabber
 
-A Python utility to download research papers from HuggingFace's papers page.
+A Python utility to download research papers from HuggingFace's papers page based on content filtering.
 
 ## Features
 
-- Scrapes the top papers from https://huggingface.co/papers
-- Downloads paper PDFs and their abstracts
-- Organizes downloads in structured folders
-- Filters papers based on keywords
-- Categorizes papers by content type (NLP, Computer Vision, etc.)
+- Scrapes papers from https://huggingface.co/papers
+- Downloads PDFs and their abstracts
+- Filters papers based on abstract content
+- Supports custom filter functions
 - Command-line interface for flexible usage
 
 ## Requirements
@@ -35,137 +34,112 @@ A Python utility to download research papers from HuggingFace's papers page.
 
 ### Basic Usage
 
-Run the script directly:
+Run the filtered paper grabber:
 
 ```bash
-# Activate the virtual environment if not already activated
 source venv/bin/activate
-
-# Run the paper grabber (2024 version)
-python hf_paper_grabber_updated.py
+python filtered_paper_grabber.py
 ```
 
 By default, it will:
-- Download the top 10 papers from HuggingFace
-- Save PDFs to `downloaded_papers/pdfs/`
-- Save abstracts to `downloaded_papers/abstracts/`
+- Analyze papers from HuggingFace's papers page
+- Download up to 10 papers that pass the filter
+- Save PDFs to `filtered_papers/pdfs/`
+- Save abstracts to `filtered_papers/abstracts/`
 
 ### Using the Command-Line Interface
 
 For more flexibility, use the CLI tool:
 
 ```bash
-python cli_grabber_updated.py [options]
+python filtered_cli.py [options]
 ```
 
 Options:
-- `-l, --limit N`: Download up to N papers (default: 10)
-- `-o, --output-dir DIR`: Save papers to DIR (default: downloaded_papers)
-- `-c, --categorize`: Organize papers by topic (NLP, vision, etc.)
-- `-f, --filter KEYWORDS`: Only download papers with these keywords in the title
+- `-n, --max-downloads N`: Download up to N papers (default: 10)
+- `-o, --output-dir DIR`: Save papers to DIR (default: filtered_papers)
+- `-f, --filter-module PATH`: Use a custom filter module
 - `-u, --url URL`: Use a different URL (default: https://huggingface.co/papers)
 
 Examples:
 
 ```bash
-# Download top 20 papers
-python cli_grabber_updated.py --limit 20
+# Download up to 20 papers
+python filtered_cli.py --max-downloads 20
 
-# Download and categorize papers
-python cli_grabber_updated.py --categorize
-
-# Download only papers about transformers or diffusion
-python cli_grabber_updated.py --filter transformer diffusion
+# Use a custom filter module
+python filtered_cli.py --filter-module sample_filters.py
 
 # Combine options
-python cli_grabber_updated.py --limit 30 --categorize --filter llm vision --output-dir ai_papers
+python filtered_cli.py --max-downloads 15 --filter-module my_filter.py --output-dir ai_papers
 ```
 
-### Using the Categorized Grabber
+## Custom Filtering
 
-For automatic categorization:
+The key to this tool is the ability to create custom filters. A filter is a function that analyzes a paper's abstract and decides whether to download it.
 
-```bash
-python categorized_grabber_updated.py
-```
+### How Filtering Works
 
-This will:
-- Download papers from HuggingFace
-- Categorize them based on content
-- Save them to category-specific directories
+1. Create a Python module with a `should_download` function
+2. The function should accept an abstract (and optionally a title)
+3. Return `True` to download the paper, or `False` to skip it
 
-## Customization
+### Example Filter Module
 
-The script is designed to be extended with custom filtering and categorization:
+Here's a simple filter module:
 
 ```python
-from hf_paper_grabber_updated import HFPaperGrabber
-
-class CustomGrabber(HFPaperGrabber):
-    def filter_papers(self, papers):
-        """Filter papers based on custom criteria"""
-        filtered = []
-        for paper in papers:
-            # Example: Only keep papers with "transformer" in the title
-            if "transformer" in paper['title'].lower():
-                filtered.append(paper)
-        return filtered
+def should_download(abstract, title=""):
+    """
+    Determine if a paper should be downloaded.
     
-    def categorize_paper(self, paper):
-        """Categorize papers based on their content"""
-        # Example: Check abstract for keywords
-        abstract = paper['abstract'].lower()
-        if "nlp" in abstract or "language" in abstract:
-            return "nlp"
-        elif "vision" in abstract or "image" in abstract:
-            return "vision"
-        else:
-            return "general"
-
-# Usage
-grabber = CustomGrabber()
-papers = grabber.get_paper_links(limit=20)
-papers = grabber.filter_papers(papers)
-
-for paper in papers:
-    paper = grabber.get_paper_details(paper)
-    category = grabber.categorize_paper(paper)
-    # Save to category-specific directory
-    # ...
+    Args:
+        abstract (str): The abstract text of the paper
+        title (str, optional): The title of the paper
+        
+    Returns:
+        bool: True if the paper should be downloaded
+    """
+    # Convert to lowercase for case-insensitive matching
+    text = (abstract + " " + title).lower()
+    
+    # Only download papers about transformers or LLMs
+    target_topics = ["transformer", "llm", "large language model"]
+    
+    # Return True if any topic is found
+    return any(topic in text for topic in target_topics)
 ```
+
+### Sample Filters
+
+The repository includes `sample_filters.py` with several example filters:
+
+- `should_download`: Selects papers about AI topics
+- `ml_focus_filter`: Selects machine learning focused papers
+- `nlp_only_filter`: Selects only NLP papers
+- `vision_only_filter`: Selects only computer vision papers
+
+To use any of these filters, edit `paper_filter.py` to import and use the desired function, or use the CLI with the `--filter-module` option.
 
 ## Directory Structure
 
-When using categorization, papers will be organized as follows:
+After running the tool, you'll have a structure like:
 
 ```
-categorized_papers/
+filtered_papers/
 ├── abstracts/
-│   ├── nlp/
-│   │   ├── 01_paper_title.txt
-│   │   └── ...
-│   ├── vision/
-│   │   ├── 02_paper_title.txt
-│   │   └── ...
+│   ├── 01_paper_title.txt
+│   ├── 02_paper_title.txt
 │   └── ...
 └── pdfs/
-    ├── nlp/
-    │   ├── 01_paper_title.pdf
-    │   └── ...
-    ├── vision/
-    │   ├── 02_paper_title.pdf
-    │   └── ...
+    ├── 01_paper_title.pdf
+    ├── 02_paper_title.pdf
     └── ...
 ```
 
 ## Future Development
 
-- Add content-based filtering using NLP techniques
+- Add text analysis for more sophisticated filtering
 - Implement citation extraction
 - Add support for other paper repositories
-- Create a web interface
-
-## Version History
-
-- v1.0.0 - Initial release
-- v1.1.0 - Updated for 2024 HuggingFace website structure
+- Create filtering based on paper impact or popularity metrics
