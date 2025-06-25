@@ -150,10 +150,9 @@ class FilteredPaperGrabber:
         safe_title = re.sub(r'[^\w\s-]', '', paper_info['title'])
         safe_title = re.sub(r'[-\s]+', '_', safe_title).lower()
         
-        # Set filenames
-        position_prefix = f"{paper_info['position']:02d}_"
-        pdf_filename = position_prefix + safe_title + '.pdf'
-        abstract_filename = position_prefix + safe_title + '.txt'
+        # Set filenames (without position prefix)
+        pdf_filename = safe_title + '.pdf'
+        abstract_filename = safe_title + '.txt'
         
         pdf_path = os.path.join(self.papers_dir, pdf_filename)
         abstract_path = os.path.join(self.abstracts_dir, abstract_filename)
