@@ -1,1 +1,1 @@
-Good papers involve monkeys.
+Good papers are about AI agents that do tool use.

@@ -1,16 +1,16 @@
 # HuggingFace Paper Grabber
 
-A Python utility to download research papers from HuggingFace's papers page based on content filtering.
+A Python utility to download research papers from HuggingFace's papers page with intelligent filtering options.
 
 ## Features
 
 - Scrapes papers from https://huggingface.co/papers
 - Downloads PDFs and their abstracts
-- Multiple filtering options:
-  - Simple keyword-based filtering
-  - Rule-based filtering with custom functions
-  - LLM-based filtering using Claude 3.7 via LiteLLM
-- Command-line interface for flexible usage
+- Multiple filtering modes:
+  - **Rule-based filtering**: Use built-in or custom Python functions
+  - **LLM-based filtering**: Use Claude 3.7 via LiteLLM for intelligent evaluation
+- Single unified command-line interface
+- Configurable output directories and download limits
 
 ## Requirements
 
@@ -40,109 +40,104 @@ A Python utility to download research papers from HuggingFace's papers page base
 
 ## Usage
 
-### Basic Usage
+### Main Command
 
-Run the filtered paper grabber:
-
-```bash
-source venv/bin/activate
-python filtered_paper_grabber.py
-```
-
-By default, it will:
-- Analyze papers from HuggingFace's papers page
-- Download up to 10 papers that pass the filter
-- Save PDFs to `filtered_papers/pdfs/`
-- Save abstracts to `filtered_papers/abstracts/`
-
-### Using LLM-Based Filtering
-
-For more sophisticated filtering using an LLM:
+All functionality is accessed through a single entry point:
 
 ```bash
-python llm_filtered_cli.py [options]
+python main.py [options]
 ```
 
-Options:
-- `-n, --max-downloads N`: Download up to N papers (default: 5)
-- `-c, --criteria-file FILE`: Path to criteria prompt file (default: what_makes_a_good_paper.txt)
-- `-o, --output-dir DIR`: Save papers to DIR (default: llm_filtered_papers)
-- `-m, --model MODEL`: LLM model to use (default: claude-3-7-sonnet)
-- `-s, --min-score N`: Minimum score threshold (1-10) required to download
-- `-u, --url URL`: Use a different URL (default: https://huggingface.co/papers)
+### Basic Usage Examples
 
-Examples:
-
+**Default LLM-based filtering:**
 ```bash
-# Basic usage with default criteria
-python llm_filtered_cli.py
-
-# Use custom criteria file with minimum score threshold
-python llm_filtered_cli.py --criteria-file my_criteria.txt --min-score 7
-
-# Download more papers
-python llm_filtered_cli.py --max-downloads 10 --output-dir more_papers
+python main.py
 ```
 
-### Using Custom Rule-Based Filtering
-
-For rule-based filtering:
-
+**Rule-based filtering:**
 ```bash
-python filtered_cli.py [options]
+python main.py --mode rule-based
 ```
 
-Options:
-- `-n, --max-downloads N`: Download up to N papers (default: 10)
-- `-o, --output-dir DIR`: Save papers to DIR (default: filtered_papers)
-- `-f, --filter-module PATH`: Use a custom filter module
-- `-u, --url URL`: Use a different URL (default: https://huggingface.co/papers)
+**Custom criteria file:**
+```bash
+python main.py --criteria-file my_criteria.txt
+```
 
-## LLM-Based Filtering
+**Download more papers to custom directory:**
+```bash
+python main.py --max-downloads 20 --output-dir research_papers
+```
 
-### How It Works
+**Use custom rule-based filter:**
+```bash
+python main.py --mode rule-based --filter-module sample_filters.py
+```
 
-The LLM-based filter:
-1. Reads your criteria from a prompt file
-2. For each paper, sends the abstract and title to Claude 3.7 along with your criteria
-3. The LLM evaluates the paper and returns:
-   - A boolean decision (should download or not)
-   - A relevance score (1-10)
-   - Reasoning for the evaluation
-4. Papers that meet the criteria are downloaded
-5. A summary of all evaluations is saved
+### Command Options
 
-### Criteria File Format
+**Core Options:**
+- `--mode {rule-based,llm}`: Filtering mode (default: llm)
+- `-n, --max-downloads N`: Maximum papers to download (default: 10)
+- `-o, --output-dir DIR`: Save papers to DIR (default: papers)
+- `-u, --url URL`: Source URL (default: https://huggingface.co/papers)
 
-The criteria file should contain the standards by which papers should be evaluated. For example:
+**Rule-based Mode Options:**
+- `-f, --filter-module FILE`: Path to custom Python filter module
 
+**LLM Mode Options:**
+- `-c, --criteria-file FILE`: Path to criteria file (default: what_makes_a_good_paper.txt)
+- `-m, --model MODEL`: LLM model to use (default: anthropic/claude-sonnet-4-20250514)
+- `-s, --min-score N`: Minimum score threshold (1-10) to download
+
+**Future Options:**
+- `--upload-server URL`: Upload endpoint (not yet implemented)
+
+## Filtering Modes
+
+### Rule-Based Filtering
+
+Uses Python functions to evaluate papers based on title and abstract content. 
+
+**Built-in filters** (in `sample_filters.py`):
+- `should_download`: Selects AI-related papers
+- `ml_focus_filter`: Machine learning focused papers
+- `nlp_only_filter`: Natural language processing papers only
+- `vision_only_filter`: Computer vision papers only
+
+**Custom filters**: Create a Python file with a `should_download(abstract, title)` function.
+
+### LLM-Based Filtering
+
+Uses Claude 3.7 to intelligently evaluate papers against custom criteria.
+
+**How it works:**
+1. Reads evaluation criteria from a text file
+2. For each paper, sends title and abstract to Claude along with your criteria
+3. Claude returns a boolean decision, relevance score (1-10), and reasoning
+4. Papers meeting criteria are downloaded
+5. Detailed evaluation summary is saved
+
+**Criteria file format:**
 ```
 Good papers should focus on machine learning applications in healthcare.
 They should present novel approaches, be well-structured, and include
 experimental results with real-world data.
 ```
 
-### Evaluation Summary
+**Example with monkey criteria:**
+```bash
+echo "Good papers involve monkeys." > monkey_criteria.txt
+python main.py --criteria-file monkey_criteria.txt
+```
 
-After running, an `evaluation_summary.txt` file is created in the output directory with detailed information about each paper evaluation, including scores and reasoning.
+## Output Structure
 
-## Custom Rule-Based Filtering
-
-The repository includes `sample_filters.py` with several example filters:
-
-- `should_download`: Selects papers about AI topics
-- `ml_focus_filter`: Selects machine learning focused papers
-- `nlp_only_filter`: Selects only NLP papers
-- `vision_only_filter`: Selects only computer vision papers
-
-To use any of these filters, edit `paper_filter.py` to import and use the desired function, or use the CLI with the `--filter-module` option.
-
-## Directory Structure
-
-After running the tool, you'll have a structure like:
+Downloaded papers are organized as:
 
 ```
-filtered_papers/
+papers/  (or your custom output directory)
 ├── abstracts/
 │   ├── 01_paper_title.txt
 │   ├── 02_paper_title.txt
@@ -153,9 +148,11 @@ filtered_papers/
     └── ...
 ```
 
+For LLM mode, an additional `evaluation_summary.txt` file contains detailed evaluation results.
+
 ## Future Development
 
-- Add text analysis for more sophisticated filtering
-- Implement citation extraction
-- Add support for other paper repositories
-- Create filtering based on paper impact or popularity metrics
+- Server upload functionality for processed papers
+- Additional paper repositories beyond HuggingFace
+- Text analysis and citation extraction
+- Impact and popularity metrics integration

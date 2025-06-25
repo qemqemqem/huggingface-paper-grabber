@@ -48,7 +48,7 @@ Output ONLY valid JSON without any additional text, comments, or markdown format
 """
 
 
-def evaluate_paper_with_llm(abstract, title="", model="claude-3-7-sonnet", prompt_file="what_makes_a_good_paper.txt"):
+def evaluate_paper_with_llm(abstract, title="", model="anthropic/claude-sonnet-4-20250514", prompt_file="what_makes_a_good_paper.txt"):
     """
     Evaluate a paper using LiteLLM and Claude 3.7.
     
@@ -84,7 +84,7 @@ def evaluate_paper_with_llm(abstract, title="", model="claude-3-7-sonnet", promp
             result = json.loads(result_text)
             
             # Ensure required fields are present
-            if "should_download" not in result or "relevance_score" not in result:
+            if "should_download" not in result or "relevance_score" not in result or "reasoning" not in result:
                 print(f"Warning: LLM response missing required fields: {result}")
                 # Provide default values if missing
                 result["should_download"] = result.get("should_download", False)
