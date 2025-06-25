@@ -10,9 +10,18 @@ import json
 import os
 import sys
 import litellm
+from dotenv import load_dotenv
 
-# Configure LiteLLM to use Claude 3.7
+# Load environment variables
+load_dotenv()
+
+# Configure LiteLLM 
 litellm.set_verbose = False
+
+# LiteLLM will automatically use provider-specific environment variables:
+# - ANTHROPIC_API_KEY for Anthropic models
+# - OPENAI_API_KEY for OpenAI models  
+# - GOOGLE_API_KEY for Google models
 
 
 def load_criteria_prompt(prompt_file="what_makes_a_good_paper.txt"):

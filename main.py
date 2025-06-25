@@ -10,9 +10,14 @@ import argparse
 import sys
 import os
 import importlib.util
+from dotenv import load_dotenv
 from filtered_paper_grabber import FilteredPaperGrabber
 import llm_filter
 import paper_filter
+import google_drive_uploader
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def load_filter_module(filter_module_path):
@@ -61,6 +66,7 @@ Examples:
   python main.py --mode rule-based                 # Basic rule-based filtering
   python main.py --mode rule-based --filter sample_filters.py  # Custom rule-based filter
   python main.py --max-downloads 20 --output research_papers
+  python main.py --upload-to-drive --drive-credentials creds.json  # Upload to Google Drive
         """
     )
     
@@ -75,8 +81,8 @@ Examples:
     parser.add_argument(
         "-n", "--max-downloads", 
         type=int, 
-        default=10,
-        help="Maximum number of papers to download (default: 10)"
+        default=int(os.getenv('MAX_DOWNLOADS', '10')),
+        help=f"Maximum number of papers to download (default: {os.getenv('MAX_DOWNLOADS', '10')})"
     )
     
     parser.add_argument(
@@ -88,15 +94,15 @@ Examples:
     parser.add_argument(
         "-o", "--output-dir",
         type=str,
-        default="papers",
-        help="Directory to save downloaded papers (default: papers)"
+        default=os.getenv('OUTPUT_DIR', 'filtered_papers'),
+        help=f"Directory to save filtered papers (default: {os.getenv('OUTPUT_DIR', 'filtered_papers')})"
     )
     
     parser.add_argument(
         "-u", "--url",
         type=str,
-        default="https://huggingface.co/papers",
-        help="URL to scrape papers from (default: https://huggingface.co/papers)"
+        default=os.getenv('HUGGINGFACE_URL', 'https://huggingface.co/papers'),
+        help=f"URL to scrape papers from (default: {os.getenv('HUGGINGFACE_URL', 'https://huggingface.co/papers')})"
     )
     
     # Rule-based filtering options
@@ -110,22 +116,51 @@ Examples:
     parser.add_argument(
         "-c", "--criteria-file",
         type=str,
-        default="what_makes_a_good_paper.txt",
-        help="Path to criteria file for LLM evaluation (default: what_makes_a_good_paper.txt)"
+        default=os.getenv('CRITERIA_FILE', 'what_makes_a_good_paper.txt'),
+        help=f"Path to criteria file for LLM evaluation (default: {os.getenv('CRITERIA_FILE', 'what_makes_a_good_paper.txt')})"
     )
     
     parser.add_argument(
         "-m", "--model",
         type=str,
-        default="anthropic/claude-sonnet-4-20250514",
-        help="LLM model for evaluation (default: anthropic/claude-sonnet-4-20250514)"
+        default=os.getenv('LLM_MODEL', 'anthropic/claude-sonnet-4-20250514'),
+        help=f"LLM model for evaluation (default: {os.getenv('LLM_MODEL', 'anthropic/claude-sonnet-4-20250514')})"
     )
     
     parser.add_argument(
         "-s", "--min-score",
         type=int,
-        default=0,
-        help="Minimum LLM score (1-10) required to download (default: 0)"
+        default=int(os.getenv('MIN_SCORE', '0')),
+        help=f"Minimum LLM score (1-10) required to download (default: {os.getenv('MIN_SCORE', '0')})"
+    )
+    
+    # Google Drive upload options
+    parser.add_argument(
+        "--upload-to-drive",
+        action="store_true",
+        default=os.getenv('UPLOAD_TO_DRIVE', '').lower() in ['true', '1', 'yes'],
+        help="Upload filtered papers to Google Drive after downloading"
+    )
+    
+    parser.add_argument(
+        "--drive-credentials",
+        type=str,
+        default=os.getenv('GOOGLE_DRIVE_CREDENTIALS_PATH'),
+        help=f"Path to Google Drive credentials file (default: {os.getenv('GOOGLE_DRIVE_CREDENTIALS_PATH', 'None')})"
+    )
+    
+    parser.add_argument(
+        "--drive-folder",
+        type=str,
+        default=os.getenv('GOOGLE_DRIVE_FOLDER_NAME', 'HuggingFace Papers'),
+        help=f"Name of the Google Drive folder to upload to (default: {os.getenv('GOOGLE_DRIVE_FOLDER_NAME', 'HuggingFace Papers')})"
+    )
+    
+    parser.add_argument(
+        "--drive-folder-id",
+        type=str,
+        default=os.getenv('GOOGLE_DRIVE_FOLDER_ID'),
+        help=f"Google Drive folder ID to upload to (overrides --drive-folder)"
     )
     
     # Future: Upload options (placeholder)
@@ -298,6 +333,13 @@ def main():
         else:
             print("Using default rule-based filter")
     
+    # Google Drive upload configuration
+    if args.upload_to_drive:
+        print(f"Google Drive upload: Enabled")
+        print(f"Drive folder: {args.drive_folder}")
+        if args.drive_credentials:
+            print(f"Credentials file: {args.drive_credentials}")
+    
     print("=" * 80)
     print()
     
@@ -320,6 +362,26 @@ def main():
         # Process papers
         max_downloads = 1 if args.one_paper else args.max_downloads
         processed_papers = grabber.process_papers(max_downloads=max_downloads)
+        
+        # Upload to Google Drive if requested
+        if args.upload_to_drive and processed_papers:
+            print(f"\n{'='*80}")
+            print("UPLOADING TO GOOGLE DRIVE")
+            print(f"{'='*80}")
+            
+            success, upload_results = google_drive_uploader.upload_papers_to_drive(
+                papers_dir=args.output_dir,
+                credentials_path=args.drive_credentials,
+                folder_name=args.drive_folder,
+                folder_id=args.drive_folder_id
+            )
+            
+            if not success:
+                print("Warning: Some files failed to upload to Google Drive")
+            else:
+                print("✓ All files successfully uploaded to Google Drive!")
+        elif args.upload_to_drive and not processed_papers:
+            print("\nNo papers were downloaded, skipping Google Drive upload")
         
         # Future: Upload to server if specified
         if args.upload_server:

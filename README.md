@@ -1,158 +1,231 @@
 # HuggingFace Paper Grabber
 
-A Python utility to download research papers from HuggingFace's papers page with intelligent filtering options.
+A Python tool for automatically downloading and filtering research papers from HuggingFace's papers page using LLM-based evaluation, with automatic Google Drive upload capabilities.
 
 ## Features
 
-- Scrapes papers from https://huggingface.co/papers
-- Downloads PDFs and their abstracts
-- Multiple filtering modes:
-  - **Rule-based filtering**: Use built-in or custom Python functions
-  - **LLM-based filtering**: Use Claude 3.7 via LiteLLM for intelligent evaluation
-- Single unified command-line interface
-- Configurable output directories and download limits
+- **Intelligent Filtering**: Uses Claude 3.7 or other LLMs to evaluate papers based on custom criteria
+- **Google Drive Integration**: Automatically upload filtered papers to Google Drive
+- **Configurable Downloads**: Set maximum number of papers to download
+- **Smart Organization**: Automatically organizes papers into PDFs and abstracts
+- **Evaluation Reports**: Generates detailed evaluation summaries
+- **Multiple Filter Modes**: Rule-based or LLM-based filtering
+- **Custom Criteria**: Define your own evaluation criteria
+- **Environment Variables**: Centralized configuration via `.env` file
 
-## Requirements
+## Quick Start
 
-- Python 3.6+
-- Dependencies: see requirements.txt
-
-## Installation
-
-1. Clone this repository:
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/huggingface-paper-grabber.git
+   git clone <repository-url>
    cd huggingface-paper-grabber
    ```
 
-2. Create a virtual environment and install dependencies:
+2. **Install dependencies**
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate
    pip install -r requirements.txt
    ```
 
-3. For LLM-based filtering, set up API access:
+3. **Set up configuration**
    ```bash
-   # For Anthropic API (Claude)
-   export ANTHROPIC_API_KEY=your_api_key_here
+   cp .env.example .env
+   # Edit .env with your API keys and preferences
    ```
 
-## Usage
+4. **Run with default settings**
+   ```bash
+   python main.py
+   ```
 
-### Main Command
+## Configuration
 
-All functionality is accessed through a single entry point:
+### Environment Variables
+
+Create a `.env` file based on `.env.example`:
+
+```bash
+# LLM Configuration
+LLM_MODEL=anthropic/claude-sonnet-4-20250514
+
+# API Keys (use provider-specific names)
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+# OPENAI_API_KEY=sk-your-openai-key-here
+# GOOGLE_API_KEY=your-google-api-key-here
+
+# Google Drive Upload Configuration
+GOOGLE_DRIVE_ENABLED=true
+GOOGLE_DRIVE_CREDENTIALS_PATH=credentials.json
+GOOGLE_DRIVE_FOLDER_NAME=HuggingFace Papers
+
+# Service Account JSON (alternative to credentials file)
+# GOOGLE_SERVICE_ACCOUNT_JSON={"type": "service_account", ...}
+
+# Paper Download Configuration
+MAX_DOWNLOADS=10
+OUTPUT_DIR=filtered_papers
+CRITERIA_FILE=what_makes_a_good_paper.txt
+MIN_SCORE=0
+
+# HuggingFace Papers URL
+HUGGINGFACE_URL=https://huggingface.co/papers
+
+# Upload Configuration
+UPLOAD_TO_DRIVE=true
+```
+
+### Google Drive Setup
+
+**Option 1: Service Account (Recommended for automation)**
+1. Create a Google Cloud Project
+2. Enable the Google Drive API
+3. Create a service account
+4. Download the service account JSON file
+5. Set `GOOGLE_DRIVE_CREDENTIALS_PATH` to the file path, or
+6. Set `GOOGLE_SERVICE_ACCOUNT_JSON` with the JSON content directly
+
+**Option 2: OAuth (Interactive)**
+1. Create OAuth 2.0 credentials in Google Cloud Console
+2. Download the credentials JSON file
+3. Set `GOOGLE_DRIVE_CREDENTIALS_PATH` to the file path
+
+### Command Line Options
 
 ```bash
 python main.py [options]
+
+Options:
+  -n, --max-downloads N           Maximum papers to download
+  -c, --criteria-file FILE        Custom evaluation criteria file
+  -m, --model MODEL               LLM model to use
+  -o, --output-dir DIR            Output directory
+  --mode MODE                     Filter mode: llm or rule-based
+  --one-paper                     Download only one paper for testing
+  --upload-to-drive               Upload papers to Google Drive
+  --drive-credentials FILE        Google Drive credentials file
+  --drive-folder NAME             Google Drive folder name
 ```
 
-### Basic Usage Examples
+## Examples
 
-**Default LLM-based filtering:**
+### Basic Usage
 ```bash
+# Download up to 10 papers using default criteria
 python main.py
+
+# Download 20 papers to a custom directory
+python main.py -n 20 -o my_filtered_papers
+
+# Test with one paper
+python main.py --one-paper
 ```
 
-**Rule-based filtering:**
+### With Google Drive Upload
 ```bash
+# Download and upload to Google Drive
+python main.py --upload-to-drive
+
+# With custom credentials file
+python main.py --upload-to-drive --drive-credentials service-account.json
+
+# To a specific Google Drive folder
+python main.py --upload-to-drive --drive-folder "AI Research Papers"
+```
+
+### Custom Filtering
+```bash
+# Use custom evaluation criteria
+python main.py -c my_criteria.txt
+
+# Use different LLM model
+python main.py -m openai/gpt-4o
+
+# Rule-based filtering
 python main.py --mode rule-based
+
+# Set minimum score threshold
+python main.py -s 7  # Only download papers scoring 7/10 or higher
 ```
 
-**Custom criteria file:**
-```bash
-python main.py --criteria-file my_criteria.txt
+## Evaluation Criteria
+
+The tool uses a text file to define what makes a good paper. Edit `what_makes_a_good_paper.txt` to customize the evaluation criteria.
+
+Example criteria:
 ```
+Papers should focus on AI agents that perform tool use - systems where AI agents can select and use external tools, APIs, or instruments to accomplish tasks. This includes but is not limited to:
 
-**Download more papers to custom directory:**
-```bash
-python main.py --max-downloads 20 --output-dir research_papers
-```
+1. AI agents using APIs, databases, or external services
+2. Tool-calling and function-calling language models
+3. Robotic systems where AI controls tools or instruments
+4. Multi-agent systems with tool coordination
+5. Agent frameworks that enable tool use
 
-**Use custom rule-based filter:**
-```bash
-python main.py --mode rule-based --filter-module sample_filters.py
-```
-
-### Command Options
-
-**Core Options:**
-- `--mode {rule-based,llm}`: Filtering mode (default: llm)
-- `-n, --max-downloads N`: Maximum papers to download (default: 10)
-- `-o, --output-dir DIR`: Save papers to DIR (default: papers)
-- `-u, --url URL`: Source URL (default: https://huggingface.co/papers)
-
-**Rule-based Mode Options:**
-- `-f, --filter-module FILE`: Path to custom Python filter module
-
-**LLM Mode Options:**
-- `-c, --criteria-file FILE`: Path to criteria file (default: what_makes_a_good_paper.txt)
-- `-m, --model MODEL`: LLM model to use (default: anthropic/claude-sonnet-4-20250514)
-- `-s, --min-score N`: Minimum score threshold (1-10) to download
-
-**Future Options:**
-- `--upload-server URL`: Upload endpoint (not yet implemented)
-
-## Filtering Modes
-
-### Rule-Based Filtering
-
-Uses Python functions to evaluate papers based on title and abstract content. 
-
-**Built-in filters** (in `sample_filters.py`):
-- `should_download`: Selects AI-related papers
-- `ml_focus_filter`: Machine learning focused papers
-- `nlp_only_filter`: Natural language processing papers only
-- `vision_only_filter`: Computer vision papers only
-
-**Custom filters**: Create a Python file with a `should_download(abstract, title)` function.
-
-### LLM-Based Filtering
-
-Uses Claude 3.7 to intelligently evaluate papers against custom criteria.
-
-**How it works:**
-1. Reads evaluation criteria from a text file
-2. For each paper, sends title and abstract to Claude along with your criteria
-3. Claude returns a boolean decision, relevance score (1-10), and reasoning
-4. Papers meeting criteria are downloaded
-5. Detailed evaluation summary is saved
-
-**Criteria file format:**
-```
-Good papers should focus on machine learning applications in healthcare.
-They should present novel approaches, be well-structured, and include
-experimental results with real-world data.
-```
-
-**Example with monkey criteria:**
-```bash
-echo "Good papers involve monkeys." > monkey_criteria.txt
-python main.py --criteria-file monkey_criteria.txt
+Exclude papers that are only about:
+- Pure language model training or inference
+- Computer vision without tool use
+- Basic machine learning algorithms
+- Theoretical AI without implementation
 ```
 
 ## Output Structure
 
-Downloaded papers are organized as:
+The tool only stores papers that **pass the filter criteria** - rejected papers are not saved to disk, keeping your storage clean and organized.
 
 ```
-papers/  (or your custom output directory)
-├── abstracts/
+filtered_papers/              # Only papers that passed the filter
+├── pdfs/                     # Downloaded PDF files
+│   ├── 01_paper_title.pdf
+│   ├── 02_paper_title.pdf
+│   └── ...
+├── abstracts/                # Paper abstracts as text files
 │   ├── 01_paper_title.txt
 │   ├── 02_paper_title.txt
 │   └── ...
-└── pdfs/
-    ├── 01_paper_title.pdf
-    ├── 02_paper_title.pdf
-    └── ...
+└── evaluation_summary.txt    # Detailed evaluation report (includes all papers evaluated)
 ```
 
-For LLM mode, an additional `evaluation_summary.txt` file contains detailed evaluation results.
+**Key Design Decisions:**
+- **Only filtered papers are stored**: Papers that don't meet your criteria are evaluated but not downloaded, saving disk space and keeping your collection focused
+- **Complete evaluation log**: All papers (accepted and rejected) are documented in `evaluation_summary.txt` with scores and reasoning
+- **Clear naming**: The `filtered_papers` directory name makes it obvious these are curated results, not raw downloads
+- **Configurable location**: Change the output directory via `OUTPUT_DIR` in `.env` or `--output-dir` flag
+- **Efficient workflow**: The LLM evaluates abstracts first, only downloading PDFs for papers that pass your criteria
 
-## Future Development
+## Supported LLM Models
 
-- Server upload functionality for processed papers
-- Additional paper repositories beyond HuggingFace
-- Text analysis and citation extraction
-- Impact and popularity metrics integration
+Configure via `LLM_MODEL` environment variable:
+
+- `anthropic/claude-sonnet-4-20250514` (recommended)
+- `openai/gpt-4o`
+- `google/gemini-1.5-pro`
+- `meta-llama/llama-3.1-405b-instruct`
+
+## Requirements
+
+- Python 3.8+
+- LiteLLM library for LLM integration
+- BeautifulSoup for web scraping
+- Requests for HTTP handling
+- Google API Client for Drive integration
+- python-dotenv for environment variables
+
+## API Keys
+
+For LLM-based filtering, set the appropriate environment variable:
+
+- **Anthropic Claude**: `ANTHROPIC_API_KEY=sk-ant-...`
+- **OpenAI GPT**: `OPENAI_API_KEY=sk-...`
+- **Google Gemini**: `GOOGLE_API_KEY=AI...`
+
+The tool automatically uses the correct API key based on the model specified in `LLM_MODEL`.
+
+## Security Notes
+
+- Never commit your `.env` file to version control
+- Use service accounts for Google Drive in production environments
+- Rotate API keys regularly
+- Consider using environment variables or secret management in production
+
+## License
+
+MIT License - see LICENSE file for details.
