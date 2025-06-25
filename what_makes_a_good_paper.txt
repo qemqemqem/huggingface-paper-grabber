@@ -1,1 +1,10 @@
-Good papers are about AI agents that do tool use.
+A good paper focuses on one or more of the following domains:
+
+* Neuroscience-inspired machine learning, including spiking neural networks and biologically plausible alternatives to backpropagation
+* Reasoning and cognitive architectures in AI, such as automated reasoning or cognitive backtracking
+* Reinforcement learning, especially as it relates to memory, agentic behavior, or integration with LLMs
+* Agentic behavior, including the nuances of tool use, scaffolding, and context engineering
+* AI alignment and safety, with emphasis on interpretability
+
+A good paper clearly articulates the underlying mechanisms and provides insight into how information is represented or processed
+It draws meaningful connections to biological intelligence or cognitive science where relevant
