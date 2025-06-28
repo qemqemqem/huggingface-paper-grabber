@@ -9,6 +9,7 @@ both service account and OAuth authentication methods.
 import os
 import json
 import sys
+import re
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 import tempfile
@@ -309,20 +310,104 @@ class GoogleDriveUploader:
         return f"https://drive.google.com/drive/folders/{self.folder_id}"
 
 
+def _get_top_papers_by_score(papers_dir: str, max_papers: int = 3) -> List[str]:
+    """
+    Get the top papers by LLM score from evaluation summary.
+    
+    Args:
+        papers_dir: Directory containing papers and evaluation summary
+        max_papers: Maximum number of papers to return
+        
+    Returns:
+        List of PDF filenames sorted by score (highest first)
+    """
+    evaluation_file = os.path.join(papers_dir, "evaluation_summary.txt")
+    
+    if not os.path.exists(evaluation_file):
+        print("Warning: No evaluation summary found, using all papers")
+        return []
+    
+    # Parse evaluation summary to extract scores and titles
+    paper_scores = []
+    
+    try:
+        with open(evaluation_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Find all paper sections (titles starting with ###)
+        paper_sections = re.split(r'\n### ', content)
+        
+        for section in paper_sections[1:]:  # Skip the header section
+            lines = section.split('\n')
+            title = lines[0].strip()
+            
+            # Extract score from the section
+            score_match = re.search(r'Score: (\d+)/10', section)
+            decision_match = re.search(r'Decision: (Download|Reject)', section)
+            
+            if score_match and decision_match and decision_match.group(1) == 'Download':
+                score = int(score_match.group(1))
+                paper_scores.append((title, score))
+        
+        # Sort by score (highest first)
+        paper_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        # Convert titles to likely PDF filenames
+        top_papers = []
+        pdfs_dir = os.path.join(papers_dir, "pdfs")
+        
+        if os.path.exists(pdfs_dir):
+            available_pdfs = [f for f in os.listdir(pdfs_dir) if f.lower().endswith('.pdf')]
+            
+            for title, score in paper_scores[:max_papers]:
+                # Try to match title to PDF filename
+                best_match = None
+                best_score = 0
+                
+                for pdf_file in available_pdfs:
+                    # Enhanced matching: split on word boundaries and underscores
+                    title_words = re.findall(r'\w+', title.lower())
+                    # Split PDF filename on both word boundaries and underscores
+                    pdf_words = re.findall(r'\w+', pdf_file.lower().replace('_', ' '))
+                    
+                    # Count word matches
+                    matches = len(set(title_words) & set(pdf_words))
+                    if matches > best_score:
+                        best_score = matches
+                        best_match = pdf_file
+                
+                if best_match and best_match not in top_papers:
+                    top_papers.append(best_match)
+                    print(f"✓ Selected for upload: {best_match} (Score: {score}/10)")
+        
+        return top_papers[:max_papers]
+        
+    except Exception as e:
+        print(f"Error parsing evaluation summary: {e}")
+        return []
+
+
 def upload_papers_to_drive(
     papers_dir: str, 
     credentials_path: str = None,
     folder_name: str = "HuggingFace Papers",
-    folder_id: str = None
+    folder_id: str = None,
+    max_uploads: int = 3
 ) -> Tuple[bool, List[Dict]]:
     """
-    Upload PDF papers from a directory to Google Drive.
+    Upload PDF papers from a directory to Google Drive, selecting only the top-scored papers.
+    
+    This function reads the evaluation_summary.txt file to identify the highest-scoring papers
+    that were marked for download, then uploads only the top N papers by LLM score.
     
     Args:
-        papers_dir: Directory containing papers to upload
+        papers_dir: Directory containing papers to upload (should contain evaluation_summary.txt)
         credentials_path: Path to Google credentials file
         folder_name: Name of the Google Drive folder (ignored if folder_id is provided)
         folder_id: Specific Google Drive folder ID to upload to
+        max_uploads: Maximum number of top-scored papers to upload (default: 3)
+                    This is SEPARATE from the paper download limit - you can download 
+                    10 papers but only upload the top 3 to Google Drive
         
     Returns:
         Tuple of (success, results_list)
@@ -331,20 +416,40 @@ def upload_papers_to_drive(
         print(f"Error: Papers directory not found: {papers_dir}")
         return False, []
     
-    # Find only PDF files to upload
-    file_paths = []
-    pdfs_dir = os.path.join(papers_dir, "pdfs")
-    if os.path.exists(pdfs_dir):
-        for file in os.listdir(pdfs_dir):
-            if file.lower().endswith('.pdf'):
-                file_path = os.path.join(pdfs_dir, file)
+    # Get top papers by LLM score
+    if max_uploads > 0:
+        top_paper_filenames = _get_top_papers_by_score(papers_dir, max_uploads)
+        
+        if not top_paper_filenames:
+            # Fallback: if no evaluation summary, use all PDFs up to max_uploads
+            print("Fallback: Using all available PDFs")
+            pdfs_dir = os.path.join(papers_dir, "pdfs")
+            if os.path.exists(pdfs_dir):
+                all_pdfs = [f for f in os.listdir(pdfs_dir) if f.lower().endswith('.pdf')]
+                top_paper_filenames = all_pdfs[:max_uploads]
+        
+        # Build full file paths
+        file_paths = []
+        pdfs_dir = os.path.join(papers_dir, "pdfs")
+        for filename in top_paper_filenames:
+            file_path = os.path.join(pdfs_dir, filename)
+            if os.path.exists(file_path):
                 file_paths.append(file_path)
+    else:
+        # Upload all PDFs if max_uploads is 0 or negative (backward compatibility)
+        file_paths = []
+        pdfs_dir = os.path.join(papers_dir, "pdfs")
+        if os.path.exists(pdfs_dir):
+            for file in os.listdir(pdfs_dir):
+                if file.lower().endswith('.pdf'):
+                    file_path = os.path.join(pdfs_dir, file)
+                    file_paths.append(file_path)
     
     if not file_paths:
         print("No PDF files found to upload")
         return True, []
     
-    print(f"Found {len(file_paths)} PDF files to upload")
+    print(f"Uploading {len(file_paths)} top-ranked PDF files")
     
     # Initialize uploader
     uploader = GoogleDriveUploader(credentials_path, folder_name)

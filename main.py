@@ -81,8 +81,8 @@ Examples:
     parser.add_argument(
         "-n", "--max-downloads", 
         type=int, 
-        default=int(os.getenv('MAX_DOWNLOADS', '10')),
-        help=f"Maximum number of papers to download (default: {os.getenv('MAX_DOWNLOADS', '10')})"
+        default=int(os.getenv('MAX_DOWNLOADS', '50')),  # Download more papers by default
+        help=f"Maximum number of papers to download (default: {os.getenv('MAX_DOWNLOADS', '50')})"
     )
     
     parser.add_argument(
@@ -136,10 +136,10 @@ Examples:
     
     # Google Drive upload options
     parser.add_argument(
-        "--upload-to-drive",
+        "--upload-to-drive", 
         action="store_true",
-        default=os.getenv('UPLOAD_TO_DRIVE', '').lower() in ['true', '1', 'yes'],
-        help="Upload filtered papers to Google Drive after downloading"
+        default=True,  # Enable Google Drive upload by default
+        help="Upload filtered papers to Google Drive after downloading (default: enabled)"
     )
     
     parser.add_argument(
@@ -161,6 +161,13 @@ Examples:
         type=str,
         default=os.getenv('GOOGLE_DRIVE_FOLDER_ID'),
         help=f"Google Drive folder ID to upload to (overrides --drive-folder)"
+    )
+    
+    parser.add_argument(
+        "--drive-max-uploads",
+        type=int,
+        default=int(os.getenv('DRIVE_MAX_UPLOADS', '3')),
+        help=f"Maximum number of top-scored papers to upload to Google Drive (default: {os.getenv('DRIVE_MAX_UPLOADS', '3')})"
     )
     
     # Future: Upload options (placeholder)
@@ -337,6 +344,7 @@ def main():
     if args.upload_to_drive:
         print(f"Google Drive upload: Enabled")
         print(f"Drive folder: {args.drive_folder}")
+        print(f"Max uploads: {args.drive_max_uploads} top-scored papers")
         if args.drive_credentials:
             print(f"Credentials file: {args.drive_credentials}")
     
@@ -369,11 +377,13 @@ def main():
             print("UPLOADING TO GOOGLE DRIVE")
             print(f"{'='*80}")
             
+            # Upload only the top-scored papers to Google Drive (separate from download limit)
             success, upload_results = google_drive_uploader.upload_papers_to_drive(
                 papers_dir=args.output_dir,
                 credentials_path=args.drive_credentials,
                 folder_name=args.drive_folder,
-                folder_id=args.drive_folder_id
+                folder_id=args.drive_folder_id,
+                max_uploads=args.drive_max_uploads  # Upload limit (default: 3) separate from download limit
             )
             
             if not success:
