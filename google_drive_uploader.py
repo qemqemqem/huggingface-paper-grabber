@@ -312,14 +312,14 @@ class GoogleDriveUploader:
 
 def _get_top_papers_by_score(papers_dir: str, max_papers: int = 3) -> List[str]:
     """
-    Get the top papers by LLM score from evaluation summary.
+    Get the top papers by combined score (LLM score × upvotes) from evaluation summary.
     
     Args:
         papers_dir: Directory containing papers and evaluation summary
         max_papers: Maximum number of papers to return
         
     Returns:
-        List of PDF filenames sorted by score (highest first)
+        List of PDF filenames sorted by combined score (highest first)
     """
     evaluation_file = os.path.join(papers_dir, "evaluation_summary.txt")
     
@@ -341,13 +341,27 @@ def _get_top_papers_by_score(papers_dir: str, max_papers: int = 3) -> List[str]:
             lines = section.split('\n')
             title = lines[0].strip()
             
-            # Extract score from the section
-            score_match = re.search(r'Score: (\d+)/10', section)
+            # Extract scores from the section
+            llm_score_match = re.search(r'LLM Score: (\d+)/10', section)
+            combined_score_match = re.search(r'Combined Score: (\d+(?:\.\d+)?)', section)
             decision_match = re.search(r'Decision: (Download|Reject)', section)
             
-            if score_match and decision_match and decision_match.group(1) == 'Download':
-                score = int(score_match.group(1))
-                paper_scores.append((title, score))
+            # Fallback to old format if new format not found
+            if not llm_score_match:
+                llm_score_match = re.search(r'Score: (\d+)/10', section)
+            
+            if decision_match and decision_match.group(1) == 'Download':
+                # Use combined score if available, otherwise fall back to LLM score
+                if combined_score_match:
+                    score = float(combined_score_match.group(1))
+                    score_type = "Combined"
+                elif llm_score_match:
+                    score = int(llm_score_match.group(1))
+                    score_type = "LLM"
+                else:
+                    continue  # Skip if no score found
+                    
+                paper_scores.append((title, score, score_type))
         
         # Sort by score (highest first)
         paper_scores.sort(key=lambda x: x[1], reverse=True)
@@ -359,7 +373,7 @@ def _get_top_papers_by_score(papers_dir: str, max_papers: int = 3) -> List[str]:
         if os.path.exists(pdfs_dir):
             available_pdfs = [f for f in os.listdir(pdfs_dir) if f.lower().endswith('.pdf')]
             
-            for title, score in paper_scores[:max_papers]:
+            for title, score, score_type in paper_scores[:max_papers]:
                 # Try to match title to PDF filename
                 best_match = None
                 best_score = 0
@@ -378,7 +392,8 @@ def _get_top_papers_by_score(papers_dir: str, max_papers: int = 3) -> List[str]:
                 
                 if best_match and best_match not in top_papers:
                     top_papers.append(best_match)
-                    print(f"✓ Selected for upload: {best_match} (Score: {score}/10)")
+                    score_display = f"{score}" if score_type == "Combined" else f"{score}/10"
+                    print(f"✓ Selected for upload: {best_match} ({score_type} Score: {score_display})")
         
         return top_papers[:max_papers]
         

@@ -238,11 +238,21 @@ class LLMFilteredPaperGrabber(FilteredPaperGrabber):
                 self.criteria_file
             )
             
-            # Store the evaluation
+            # Calculate combined score (LLM score × upvotes)
+            upvotes = paper.get('upvotes', 0)
+            llm_score = evaluation['relevance_score']
+            combined_score = llm_score * max(upvotes, 1)  # Use 1 if no upvotes to avoid zero
+            
+            # Store the evaluation with additional metadata
             paper_with_details['evaluation'] = evaluation
+            paper_with_details['upvotes'] = upvotes
+            paper_with_details['combined_score'] = combined_score
+            
             self.evaluations.append({
                 'title': paper_with_details['title'],
-                'evaluation': evaluation
+                'evaluation': evaluation,
+                'upvotes': upvotes,
+                'combined_score': combined_score
             })
             
             # Apply both the boolean decision and minimum score threshold
@@ -252,7 +262,9 @@ class LLMFilteredPaperGrabber(FilteredPaperGrabber):
             
             if should_download:
                 print(f"✓ Paper accepted: {paper['title']}")
-                print(f"  Score: {evaluation['relevance_score']}/10")
+                print(f"  LLM Score: {evaluation['relevance_score']}/10")
+                print(f"  Upvotes: {upvotes}")
+                print(f"  Combined Score: {combined_score} (LLM × upvotes)")
                 print(f"  Reasoning: {evaluation['reasoning']}")
                 
                 # Download the paper
@@ -261,7 +273,9 @@ class LLMFilteredPaperGrabber(FilteredPaperGrabber):
                 downloaded_count += 1
             else:
                 print(f"✗ Paper rejected: {paper['title']}")
-                print(f"  Score: {evaluation['relevance_score']}/10")
+                print(f"  LLM Score: {evaluation['relevance_score']}/10")
+                print(f"  Upvotes: {upvotes}")
+                print(f"  Combined Score: {combined_score} (LLM × upvotes)")
                 print(f"  Reasoning: {evaluation['reasoning']}")
             
             print()
@@ -283,20 +297,26 @@ class LLMFilteredPaperGrabber(FilteredPaperGrabber):
                 f.write(f"Model: {self.model}\n")
                 f.write(f"Minimum score threshold: {self.min_score}/10\n\n")
                 
-                f.write("## Evaluations\n\n")
+                f.write("## Evaluations\n")
+                f.write("Sorted by Combined Score (LLM Score × Upvotes) - highest first\n\n")
                 
-                # Sort by score (descending)
+                # Sort by combined score (descending)
                 sorted_evals = sorted(
                     self.evaluations, 
-                    key=lambda x: x['evaluation']['relevance_score'], 
+                    key=lambda x: x.get('combined_score', x['evaluation']['relevance_score']), 
                     reverse=True
                 )
                 
                 for item in sorted_evals:
                     eval_data = item['evaluation']
+                    upvotes = item.get('upvotes', 0)
+                    combined_score = item.get('combined_score', eval_data['relevance_score'])
+                    
                     f.write(f"### {item['title']}\n")
                     f.write(f"* Decision: {'Download' if eval_data['should_download'] else 'Reject'}\n")
-                    f.write(f"* Score: {eval_data['relevance_score']}/10\n")
+                    f.write(f"* LLM Score: {eval_data['relevance_score']}/10\n")
+                    f.write(f"* Upvotes: {upvotes}\n")
+                    f.write(f"* Combined Score: {combined_score} (LLM × upvotes)\n")
                     f.write(f"* Reasoning: {eval_data['reasoning']}\n\n")
                 
             print(f"Evaluation summary saved to: {summary_path}")

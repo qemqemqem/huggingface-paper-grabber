@@ -74,15 +74,57 @@ class FilteredPaperGrabber:
             # Get paper ID from URL (e.g., /papers/2505.14683)
             paper_id = relative_link.split("/")[-1]
             
+            # Extract upvote count
+            upvotes = self._extract_upvote_count(paper_elem)
+            
             papers.append({
                 'title': title,
                 'paper_url': paper_url,
                 'paper_id': paper_id,
-                'position': i + 1
+                'position': i + 1,
+                'upvotes': upvotes
             })
             
         print(f"Found {len(papers)} papers to analyze")
         return papers
+    
+    def _extract_upvote_count(self, paper_elem):
+        """
+        Extract upvote count from a paper element.
+        
+        Upvotes appear as numbers in square brackets linked to login pages.
+        Pattern: [40](/login?next=%2Fpapers%2F2506.20670)
+        """
+        try:
+            # Look for links to login pages that contain paper references
+            login_links = paper_elem.select('a[href*="/login?next="]')
+            
+            for link in login_links:
+                href = link.get('href', '')
+                # Check if this is a login link for a paper (contains /papers/ or %2Fpapers%2F in the redirect)
+                if '/papers/' in href or '%2Fpapers%2F' in href:
+                    # Extract the text, which should be the vote count
+                    vote_text = link.text.strip()
+                    
+                    # Handle different formats: "40", "1.2k", "2.84k", etc.
+                    if vote_text:
+                        try:
+                            # Handle 'k' suffix (e.g., "1.2k" -> 1200)
+                            if vote_text.lower().endswith('k'):
+                                base_num = float(vote_text[:-1])
+                                return int(base_num * 1000)
+                            else:
+                                return int(vote_text)
+                        except ValueError:
+                            # If conversion fails, continue looking
+                            continue
+            
+            # If no upvote count found, return 0
+            return 0
+            
+        except Exception as e:
+            print(f"Warning: Could not extract upvote count: {e}")
+            return 0
         
     def get_paper_details(self, paper_info):
         """Get abstract and PDF link for a paper."""
