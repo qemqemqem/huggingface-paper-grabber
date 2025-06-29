@@ -11,7 +11,7 @@ import json
 import sys
 import re
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Set
 import tempfile
 
 from googleapiclient.discovery import build
@@ -24,6 +24,89 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Google Drive API scopes
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
+
+# Default name for the uploaded papers memory file
+UPLOADED_PAPERS_FILE = "uploaded_papers_memory.txt"
+
+
+def load_uploaded_papers_memory(memory_file_path: str) -> Set[str]:
+    """
+    Load the set of already uploaded paper titles from memory file.
+    
+    Args:
+        memory_file_path: Path to the memory file containing uploaded paper titles
+        
+    Returns:
+        Set of paper titles that have already been uploaded
+    """
+    uploaded_papers = set()
+    
+    if os.path.exists(memory_file_path):
+        try:
+            with open(memory_file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    title = line.strip()
+                    if title:  # Skip empty lines
+                        uploaded_papers.add(title)
+            print(f"✓ Loaded {len(uploaded_papers)} previously uploaded papers from memory")
+        except Exception as e:
+            print(f"Warning: Error reading uploaded papers memory file: {e}")
+    else:
+        print("No previous upload memory found - will create new memory file")
+    
+    return uploaded_papers
+
+
+def save_uploaded_papers_memory(memory_file_path: str, uploaded_papers: Set[str]) -> bool:
+    """
+    Save the set of uploaded paper titles to memory file.
+    
+    Args:
+        memory_file_path: Path to the memory file
+        uploaded_papers: Set of paper titles that have been uploaded
+        
+    Returns:
+        bool: True if saved successfully, False otherwise
+    """
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(memory_file_path), exist_ok=True)
+        
+        with open(memory_file_path, 'w', encoding='utf-8') as f:
+            for title in sorted(uploaded_papers):  # Sort for consistency
+                f.write(f"{title}\n")
+        
+        print(f"✓ Updated memory file with {len(uploaded_papers)} uploaded papers")
+        return True
+        
+    except Exception as e:
+        print(f"Error saving uploaded papers memory: {e}")
+        return False
+
+
+def get_paper_title_from_filename(filename: str) -> str:
+    """
+    Extract a clean paper title from PDF filename for memory tracking.
+    
+    Args:
+        filename: PDF filename (e.g., "03_skywork_swe_unveiling_data_scaling_laws.pdf")
+        
+    Returns:
+        Clean title suitable for memory tracking
+    """
+    # Remove file extension
+    name = os.path.splitext(filename)[0]
+    
+    # Remove position prefix (e.g., "03_")
+    name = re.sub(r'^\d+_', '', name)
+    
+    # Replace underscores with spaces and normalize
+    title = name.replace('_', ' ').strip()
+    
+    # Convert to title case for consistency
+    title = ' '.join(word.capitalize() for word in title.split())
+    
+    return title
 
 
 class GoogleDriveUploader:
@@ -407,13 +490,15 @@ def upload_papers_to_drive(
     credentials_path: str = None,
     folder_name: str = "HuggingFace Papers",
     folder_id: str = None,
-    max_uploads: int = 3
+    max_uploads: int = 3,
+    memory_file: str = None
 ) -> Tuple[bool, List[Dict]]:
     """
     Upload PDF papers from a directory to Google Drive, selecting only the top-scored papers.
     
     This function reads the evaluation_summary.txt file to identify the highest-scoring papers
     that were marked for download, then uploads only the top N papers by LLM score.
+    It also maintains a memory file to avoid uploading duplicate papers.
     
     Args:
         papers_dir: Directory containing papers to upload (should contain evaluation_summary.txt)
@@ -423,6 +508,7 @@ def upload_papers_to_drive(
         max_uploads: Maximum number of top-scored papers to upload (default: 3)
                     This is SEPARATE from the paper download limit - you can download 
                     10 papers but only upload the top 3 to Google Drive
+        memory_file: Path to memory file tracking uploaded papers (default: papers_dir/uploaded_papers_memory.txt)
         
     Returns:
         Tuple of (success, results_list)
@@ -430,6 +516,14 @@ def upload_papers_to_drive(
     if not os.path.exists(papers_dir):
         print(f"Error: Papers directory not found: {papers_dir}")
         return False, []
+    
+    # Setup memory file path
+    if memory_file is None:
+        memory_file = os.path.join(papers_dir, UPLOADED_PAPERS_FILE)
+    
+    # Load memory of previously uploaded papers
+    print(f"\nChecking for previously uploaded papers...")
+    uploaded_papers = load_uploaded_papers_memory(memory_file)
     
     # Get top papers by LLM score
     if max_uploads > 0:
@@ -443,22 +537,42 @@ def upload_papers_to_drive(
                 all_pdfs = [f for f in os.listdir(pdfs_dir) if f.lower().endswith('.pdf')]
                 top_paper_filenames = all_pdfs[:max_uploads]
         
-        # Build full file paths
+        # Build full file paths, filtering out already uploaded papers
         file_paths = []
+        skipped_papers = []
         pdfs_dir = os.path.join(papers_dir, "pdfs")
         for filename in top_paper_filenames:
             file_path = os.path.join(pdfs_dir, filename)
             if os.path.exists(file_path):
-                file_paths.append(file_path)
+                # Check if this paper has already been uploaded
+                paper_title = get_paper_title_from_filename(filename)
+                if paper_title in uploaded_papers:
+                    skipped_papers.append((filename, paper_title))
+                    print(f"⚠ Skipping already uploaded paper: {filename}")
+                else:
+                    file_paths.append(file_path)
+        
+        if skipped_papers:
+            print(f"Skipped {len(skipped_papers)} already uploaded papers")
     else:
         # Upload all PDFs if max_uploads is 0 or negative (backward compatibility)
         file_paths = []
+        skipped_papers = []
         pdfs_dir = os.path.join(papers_dir, "pdfs")
         if os.path.exists(pdfs_dir):
             for file in os.listdir(pdfs_dir):
                 if file.lower().endswith('.pdf'):
                     file_path = os.path.join(pdfs_dir, file)
-                    file_paths.append(file_path)
+                    # Check if this paper has already been uploaded
+                    paper_title = get_paper_title_from_filename(file)
+                    if paper_title in uploaded_papers:
+                        skipped_papers.append((file, paper_title))
+                        print(f"⚠ Skipping already uploaded paper: {file}")
+                    else:
+                        file_paths.append(file_path)
+        
+        if skipped_papers:
+            print(f"Skipped {len(skipped_papers)} already uploaded papers")
     
     if not file_paths:
         print("No PDF files found to upload")
@@ -498,6 +612,24 @@ def upload_papers_to_drive(
         print(f"✗ Failed to upload {len(failed)} files:")
         for result in failed:
             print(f"  - {result['file_path']}: {result['error']}")
+    
+    # Update memory with newly uploaded papers
+    if successful:
+        newly_uploaded_titles = []
+        for result in successful:
+            filename = os.path.basename(result['file_path'])
+            paper_title = get_paper_title_from_filename(filename)
+            uploaded_papers.add(paper_title)
+            newly_uploaded_titles.append(paper_title)
+        
+        # Save updated memory to disk
+        if save_uploaded_papers_memory(memory_file, uploaded_papers):
+            print(f"✓ Added {len(newly_uploaded_titles)} new papers to upload memory")
+        
+        if newly_uploaded_titles:
+            print("New papers added to memory:")
+            for title in newly_uploaded_titles:
+                print(f"  - {title}")
     
     # Print folder link (don't try to make public when using specific folder ID)
     make_public = False  # Never try to make existing folders public
